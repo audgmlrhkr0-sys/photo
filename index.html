@@ -140,7 +140,7 @@
           <label for="email-input">이메일로 전달</label>
           <input type="email" id="email-input" class="text-input" placeholder="example@email.com">
           <button id="btn-email" class="btn-primary">📧 이메일로 보내기</button>
-          <p class="email-note">입력한 주소로 사진이 <strong>자동 전송</strong>됩니다.<br>처음 사용하는 주소는 인증 메일 확인 후 재전송해 주세요.</p>
+          <p class="email-note">이메일 입력 후 바로 전송됩니다.<br>(방문객 인증 불필요 · 부스 운영자 1회 설정)</p>
         </div>
         <button id="btn-download" class="btn-secondary">💾 저장하기</button>
         <button id="btn-retake" class="btn-secondary">📷 다시 찍기</button>
@@ -148,6 +148,8 @@
     </div>
   </section>
 
+  <script src="email-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

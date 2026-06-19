@@ -733,6 +733,14 @@ function initDrawing() {
 }
 
 // ── Save & email ──
+function isEmailConfigured() {
+  const c = window.EMAIL_CONFIG;
+  return c?.enabled && c.publicKey && c.serviceId && c.templateId
+    && !c.publicKey.includes('YOUR_')
+    && !c.serviceId.includes('YOUR_')
+    && !c.templateId.includes('YOUR_');
+}
+
 function downloadResult() {
   const link = document.createElement('a');
   link.download = `인생네컷_${Date.now()}.png`;
@@ -751,42 +759,50 @@ async function sendEmail() {
     return;
   }
 
+  if (!isEmailConfigured()) {
+    alert(
+      '이메일 자동 전송 설정이 필요합니다.\n\n' +
+      'email-config.js 파일을 열어 EmailJS 정보를 입력해 주세요.\n' +
+      '(부스 운영자가 1번만 설정하면, 방문객은 인증 없이 바로 받습니다)'
+    );
+    return;
+  }
+
   const btn = document.getElementById('btn-email');
   const prevText = btn.textContent;
   btn.disabled = true;
   btn.textContent = '전송 중...';
 
   try {
+    const cfg = window.EMAIL_CONFIG;
+    emailjs.init(cfg.publicKey);
+
     const dataUrl = getExportDataUrl();
-    const blob = await (await fetch(dataUrl)).blob();
+    const base64 = dataUrl.split(',')[1];
     const filename = `인생네컷_${Date.now()}.png`;
 
-    const formData = new FormData();
-    formData.append('_subject', '인생네컷 4컷 사진 📸');
-    formData.append('message', '인생네컷 포토부스에서 만든 4컷 사진입니다!');
-    formData.append('attachment', blob, filename);
-    formData.append('_captcha', 'false');
-    formData.append('_template', 'table');
+    await emailjs.send(
+      cfg.serviceId,
+      cfg.templateId,
+      {
+        to_email: email,
+        subject: '인생네컷 4컷 사진 📸',
+        message: '인생네컷 포토부스에서 만든 4컷 사진입니다!',
+      },
+      {
+        publicKey: cfg.publicKey,
+        attachments: [{ name: filename, data: base64 }],
+      }
+    );
 
-    const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(email)}`, {
-      method: 'POST',
-      headers: { Accept: 'application/json' },
-      body: formData,
-    });
-
-    const data = await res.json();
-
-    if (data.success === 'true' || data.success === true) {
-      alert(`${email} 으로 사진을 전송했습니다!\n메일함을 확인해 주세요.`);
-    } else {
-      throw new Error(data.message || '전송 실패');
-    }
-  } catch (_) {
+    alert(`${email} 으로 사진을 보냈습니다!\n메일함(스팸함 포함)을 확인해 주세요.`);
+  } catch (err) {
+    console.error(err);
     const retry = confirm(
       '자동 전송에 실패했습니다.\n\n' +
-      '· 인터넷 연결을 확인해 주세요\n' +
-      '· file:// 로 연 경우 localhost 서버에서 실행해 주세요\n' +
-      '· 처음 받는 주소는 FormSubmit 인증 메일을 먼저 확인해야 합니다\n\n' +
+      '· 인터넷 연결 확인\n' +
+      '· email-config.js 설정 확인\n' +
+      '· EmailJS 템플릿 To Email이 {{to_email}} 인지 확인\n\n' +
       '사진을 저장하고 메일 앱으로 보낼까요?'
     );
     if (retry) {
