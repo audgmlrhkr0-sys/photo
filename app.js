@@ -349,7 +349,53 @@ async function initDecorateScreen() {
   document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
   document.querySelector('.tool-btn[data-tool="pen"]').classList.add('active');
   updateStickerEditPanel();
+  updateEmailQuotaUI();
   renderDecorateCanvas();
+}
+
+function getMonthKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function getEmailUsage() {
+  return parseInt(localStorage.getItem(`insamnetcut_email_${getMonthKey()}`) || '0', 10);
+}
+
+function getEmailLimit() {
+  return window.EMAIL_CONFIG?.monthlyEmailLimit ?? 200;
+}
+
+function getEmailRemaining() {
+  return Math.max(0, getEmailLimit() - getEmailUsage());
+}
+
+function canSendEmail() {
+  return getEmailUsage() < getEmailLimit();
+}
+
+function incrementEmailUsage() {
+  localStorage.setItem(`insamnetcut_email_${getMonthKey()}`, String(getEmailUsage() + 1));
+}
+
+function updateEmailQuotaUI() {
+  const quotaEl = document.getElementById('email-quota');
+  const btn = document.getElementById('btn-email');
+  if (!quotaEl || !btn) return;
+
+  const remaining = getEmailRemaining();
+  const limit = getEmailLimit();
+  quotaEl.textContent = `이번 달 전송 가능: ${remaining} / ${limit}통`;
+
+  if (remaining <= 0) {
+    quotaEl.style.color = '#f87171';
+    btn.disabled = true;
+    btn.title = '이번 달 무료 한도를 모두 사용했습니다';
+  } else {
+    quotaEl.style.color = '';
+    btn.disabled = false;
+    btn.title = '';
+  }
 }
 
 function snapshotState() {
@@ -479,14 +525,43 @@ function renderDecorateCanvas(showHandles = true) {
   }
 }
 
-function getExportDataUrl() {
+function getExportDataUrl(mime = 'image/png', quality) {
   const prev = state.selectedStickerId;
   state.selectedStickerId = null;
   renderDecorateCanvas(false);
-  const url = drawCanvas.toDataURL('image/png');
+  const url = quality !== undefined
+    ? drawCanvas.toDataURL(mime, quality)
+    : drawCanvas.toDataURL(mime);
   state.selectedStickerId = prev;
   renderDecorateCanvas(true);
   return url;
+}
+
+function getEmailJsError(err) {
+  if (typeof err?.text === 'string') return err.text;
+  if (typeof err?.message === 'string') return err.message;
+  return '알 수 없는 오류';
+}
+
+async function uploadPhotoToImgbb(dataUrl) {
+  const key = window.EMAIL_CONFIG?.imgbbKey?.trim();
+  if (!key) {
+    throw new Error('IMGbb_KEY_MISSING');
+  }
+
+  const base64 = dataUrl.split(',')[1];
+  const formData = new FormData();
+  formData.append('image', base64);
+
+  const res = await fetch(
+    `https://api.imgbb.com/1/upload?key=${encodeURIComponent(key)}&expiration=604800`,
+    { method: 'POST', body: formData }
+  );
+  const json = await res.json();
+  if (!json.success) {
+    throw new Error(json.error?.message || 'ImgBB 업로드 실패');
+  }
+  return json.data.url;
 }
 
 function updateDrawCursor() {
@@ -735,7 +810,7 @@ function initDrawing() {
 // ── Save & email ──
 function isEmailConfigured() {
   const c = window.EMAIL_CONFIG;
-  return c?.enabled && c.publicKey && c.serviceId && c.templateId
+  return c?.enabled && c.publicKey && c.serviceId && c.templateId && c.imgbbKey?.trim()
     && !c.publicKey.includes('YOUR_')
     && !c.serviceId.includes('YOUR_')
     && !c.templateId.includes('YOUR_');
@@ -760,11 +835,27 @@ async function sendEmail() {
   }
 
   if (!isEmailConfigured()) {
+    const missingImgbb = !window.EMAIL_CONFIG?.imgbbKey?.trim();
     alert(
-      '이메일 자동 전송 설정이 필요합니다.\n\n' +
-      'email-config.js 파일을 열어 EmailJS 정보를 입력해 주세요.\n' +
-      '(부스 운영자가 1번만 설정하면, 방문객은 인증 없이 바로 받습니다)'
+      missingImgbb
+        ? 'ImgBB API Key가 필요합니다.\n\n' +
+          '1. https://api.imgbb.com/ 접속 → Get API Key (무료)\n' +
+          '2. email-config.js 의 imgbbKey 에 붙여넣기\n' +
+          '3. EmailJS 템플릿 Content에 {{photo_url}} 추가\n' +
+          '4. 사이트 새로고침'
+        : '이메일 전송 설정을 확인해 주세요.\n(email-config.js)'
     );
+    return;
+  }
+
+  if (!canSendEmail()) {
+    alert(
+      `이번 달 무료 이메일 한도(${getEmailLimit()}통)를 모두 사용했습니다.\n\n` +
+      '· 💾 저장하기로 사진을 받을 수 있습니다\n' +
+      '· 다음 달 1일부터 다시 전송 가능\n' +
+      '· 자동 결제·과금은 없습니다'
+    );
+    updateEmailQuotaUI();
     return;
   }
 
@@ -777,33 +868,38 @@ async function sendEmail() {
     const cfg = window.EMAIL_CONFIG;
     emailjs.init(cfg.publicKey);
 
-    const dataUrl = getExportDataUrl();
-    const base64 = dataUrl.split(',')[1];
-    const filename = `인생네컷_${Date.now()}.png`;
+    btn.textContent = '사진 업로드 중...';
+    const jpegDataUrl = getExportDataUrl('image/jpeg', 0.85);
+    const photoUrl = await uploadPhotoToImgbb(jpegDataUrl);
 
-    await emailjs.send(
-      cfg.serviceId,
-      cfg.templateId,
-      {
-        to_email: email,
-        subject: '인생네컷 4컷 사진 📸',
-        message: '인생네컷 포토부스에서 만든 4컷 사진입니다!',
-      },
-      {
-        publicKey: cfg.publicKey,
-        attachments: [{ name: filename, data: base64 }],
-      }
-    );
+    btn.textContent = '메일 전송 중...';
+    await emailjs.send(cfg.serviceId, cfg.templateId, {
+      to_email: email,
+      email,
+      name: '인생네컷',
+      subject: '인생네컷 4컷 사진 📸',
+      message: '인생네컷 포토부스에서 만든 4컷 사진입니다!\n아래 링크를 눌러 다운로드하세요.',
+      photo_url: photoUrl,
+    });
 
-    alert(`${email} 으로 사진을 보냈습니다!\n메일함(스팸함 포함)을 확인해 주세요.`);
+    incrementEmailUsage();
+    updateEmailQuotaUI();
+    alert(`${email} 으로 사진 링크를 보냈습니다!\n메일함(스팸함 포함)을 확인해 주세요.`);
   } catch (err) {
     console.error(err);
+    const detail = getEmailJsError(err);
+    const isQuota = /quota|limit|exceeded|402|403/i.test(detail);
+    const isImgbb = err?.message === 'IMGbb_KEY_MISSING' || detail.includes('ImgBB');
     const retry = confirm(
-      '자동 전송에 실패했습니다.\n\n' +
-      '· 인터넷 연결 확인\n' +
-      '· email-config.js 설정 확인\n' +
-      '· EmailJS 템플릿 To Email이 {{to_email}} 인지 확인\n\n' +
-      '사진을 저장하고 메일 앱으로 보낼까요?'
+      (isQuota
+        ? `이번 달 EmailJS 무료 한도에 도달했습니다.\n(자동 과금 없음)\n\n💾 저장하기를 이용해 주세요.`
+        : isImgbb
+        ? 'ImgBB API Key를 email-config.js 에 입력해 주세요.\n(https://api.imgbb.com/)'
+        : `전송 실패: ${detail}\n\n` +
+          '· EmailJS 템플릿 To Email: {{to_email}}\n' +
+          '· Content에 {{photo_url}} 추가\n' +
+          '· imgbbKey 설정 확인') +
+      '\n\n사진을 저장하고 메일 앱으로 보낼까요?'
     );
     if (retry) {
       downloadResult();
@@ -812,8 +908,8 @@ async function sendEmail() {
       window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
     }
   } finally {
-    btn.disabled = false;
     btn.textContent = prevText;
+    updateEmailQuotaUI();
   }
 }
 
