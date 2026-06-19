@@ -48,15 +48,15 @@
         <canvas id="demo-preview" class="demo-preview hidden"></canvas>
         <canvas id="capture-canvas" hidden></canvas>
         <div id="countdown-overlay" class="countdown-overlay hidden">
-          <span id="countdown-number" class="countdown-number">5</span>
+          <span id="countdown-number" class="countdown-number">3</span>
         </div>
         <div id="flash-overlay" class="flash-overlay"></div>
       </div>
       <aside class="shoot-sidebar">
         <h2>촬영 안내</h2>
         <ul class="guide-list">
-          <li>촬영하기를 누르면 <strong>5초</strong> 후 촬영됩니다</li>
-          <li>총 <strong>6장</strong> 촬영 후 4장을 선택합니다</li>
+          <li>촬영하기를 누르면 <strong>3초</strong> 간격으로 <strong>6장</strong> 연속 촬영</li>
+          <li>촬영 후 4장을 선택합니다</li>
           <li>카메라를 정면으로 바라봐 주세요</li>
         </ul>
         <div id="thumb-strip" class="thumb-strip"></div>
@@ -72,18 +72,22 @@
       <span class="step-badge">STEP 2 · 4컷 선택</span>
       <span id="select-count" class="select-count">0 / 4 선택됨</span>
     </header>
-    <p class="select-guide">마음에 드는 사진 <strong>4장</strong>을 골라주세요 (클릭하여 선택/해제)</p>
-    <div id="photo-grid" class="photo-grid"></div>
-    <div class="select-preview-wrap">
-      <h3>미리보기</h3>
-      <div id="strip-preview" class="strip-preview">
-        <div class="strip-slot empty"></div>
-        <div class="strip-slot empty"></div>
-        <div class="strip-slot empty"></div>
-        <div class="strip-slot empty"></div>
+    <div class="select-layout">
+      <aside class="select-frame-panel">
+        <h3>4컷 프레임</h3>
+        <div id="strip-preview" class="strip-preview">
+          <div class="strip-slot empty"></div>
+          <div class="strip-slot empty"></div>
+          <div class="strip-slot empty"></div>
+          <div class="strip-slot empty"></div>
+        </div>
+        <button id="btn-to-decorate" class="btn-primary" disabled>꾸미기로 →</button>
+      </aside>
+      <div class="select-photos-panel">
+        <p class="select-guide">마음에 드는 사진 <strong>4장</strong>을 골라주세요 (클릭하여 선택/해제)</p>
+        <div id="photo-grid" class="photo-grid"></div>
       </div>
     </div>
-    <button id="btn-to-decorate" class="btn-primary btn-large" disabled>꾸미기로 →</button>
   </section>
 
   <!-- 꾸미기 화면 -->
@@ -95,8 +99,8 @@
       <div class="canvas-wrap">
         <canvas id="draw-canvas"></canvas>
       </div>
-      <aside class="tool-panel">
-        <h2>도구</h2>
+      <aside class="draw-panel">
+        <h2>그리기 도구</h2>
         <div class="tool-group">
           <label>색상</label>
           <div id="color-palette" class="color-palette"></div>
@@ -110,25 +114,36 @@
         <div class="tool-group">
           <label>도구</label>
           <div class="tool-buttons">
-            <button class="tool-btn active" data-tool="pen" title="펜">✏️</button>
-            <button class="tool-btn" data-tool="sticker" title="스티커">😊</button>
-            <button class="tool-btn" data-tool="eraser" title="지우개">🧹</button>
+            <button class="tool-btn active" data-tool="pen" title="펜">✏️ 펜</button>
+            <button class="tool-btn" data-tool="eraser" title="지우개">
+              <span class="eraser-icon" aria-hidden="true"></span> 지우개
+            </button>
           </div>
-        </div>
-        <div id="sticker-tools" class="tool-group hidden">
-          <label>스티커 (클릭하여 붙이기)</label>
-          <div id="sticker-palette" class="sticker-palette"></div>
-          <label>스티커 크기</label>
-          <input type="range" id="sticker-size" min="24" max="96" value="48">
-          <span id="sticker-size-label">48px</span>
         </div>
         <div class="tool-actions">
           <button id="btn-undo" class="btn-secondary">↩ 되돌리기</button>
           <button id="btn-clear-draw" class="btn-secondary">🗑 그림 지우기</button>
         </div>
+      </aside>
+      <aside class="emoji-panel">
+        <h2>이모지 스티커</h2>
+        <p class="emoji-hint">이모지 선택 → 프레임 클릭하여 붙이기<br>드래그로 이동 · 모서리 핸들로 크기 조절</p>
+        <div id="sticker-palette" class="sticker-palette"></div>
+        <div id="sticker-edit" class="sticker-edit hidden">
+          <label>선택한 스티커 크기</label>
+          <input type="range" id="selected-sticker-size" min="24" max="120" value="48">
+          <span id="selected-sticker-size-label">48px</span>
+          <button id="btn-delete-sticker" class="btn-secondary btn-small">스티커 삭제</button>
+        </div>
         <hr>
-        <button id="btn-download" class="btn-primary">💾 저장하기</button>
-        <button id="btn-restart" class="btn-secondary">🔄 처음부터</button>
+        <div class="share-group">
+          <label for="email-input">이메일로 전달</label>
+          <input type="email" id="email-input" class="text-input" placeholder="example@email.com">
+          <button id="btn-email" class="btn-primary">📧 이메일로 보내기</button>
+          <p class="email-note">입력한 주소로 사진이 <strong>자동 전송</strong>됩니다.<br>처음 사용하는 주소는 인증 메일 확인 후 재전송해 주세요.</p>
+        </div>
+        <button id="btn-download" class="btn-secondary">💾 저장하기</button>
+        <button id="btn-retake" class="btn-secondary">📷 다시 찍기</button>
       </aside>
     </div>
   </section>
