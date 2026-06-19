@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>인생네컷</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- 입장 화면 -->
+  <section id="screen-entrance" class="screen active">
+    <div class="entrance-bg"></div>
+    <div class="entrance-content">
+      <div class="logo-area">
+        <div class="logo-icon">📸</div>
+        <h1 class="logo-title">인생네컷</h1>
+        <p class="logo-sub">나만의 4컷 사진을 만들어보세요</p>
+      </div>
+      <div class="booth-preview">
+        <div class="booth-frame">
+          <div class="booth-curtain left"></div>
+          <div class="booth-curtain right"></div>
+          <div class="booth-inner">
+            <div class="booth-light"></div>
+            <p class="booth-text">PHOTO BOOTH</p>
+          </div>
+        </div>
+      </div>
+      <button id="btn-enter" class="btn-primary btn-large">입장하기</button>
+      <button id="btn-demo" class="btn-secondary btn-large">데모 모드 (캠 없이 테스트)</button>
+      <p class="hint">노트북 카메라를 사용합니다 · PC 화면에 최적화</p>
+    </div>
+  </section>
+
+  <!-- 촬영 화면 -->
+  <section id="screen-shoot" class="screen">
+    <header class="shoot-header">
+      <span class="step-badge">STEP 1 · 촬영</span>
+      <span id="demo-badge" class="demo-badge hidden">데모 모드</span>
+      <span id="shoot-count" class="shoot-count">0 / 6</span>
+    </header>
+    <div class="shoot-layout">
+      <div class="camera-wrap">
+        <video id="camera" autoplay playsinline muted></video>
+        <canvas id="demo-preview" class="demo-preview hidden"></canvas>
+        <canvas id="capture-canvas" hidden></canvas>
+        <div id="countdown-overlay" class="countdown-overlay hidden">
+          <span id="countdown-number" class="countdown-number">5</span>
+        </div>
+        <div id="flash-overlay" class="flash-overlay"></div>
+      </div>
+      <aside class="shoot-sidebar">
+        <h2>촬영 안내</h2>
+        <ul class="guide-list">
+          <li>촬영하기를 누르면 <strong>5초</strong> 후 촬영됩니다</li>
+          <li>총 <strong>6장</strong> 촬영 후 4장을 선택합니다</li>
+          <li>카메라를 정면으로 바라봐 주세요</li>
+        </ul>
+        <div id="thumb-strip" class="thumb-strip"></div>
+        <button id="btn-shoot" class="btn-primary btn-shoot">📷 촬영하기</button>
+        <button id="btn-to-select" class="btn-secondary hidden">4컷 선택하기 →</button>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 선택 화면 -->
+  <section id="screen-select" class="screen">
+    <header class="select-header">
+      <span class="step-badge">STEP 2 · 4컷 선택</span>
+      <span id="select-count" class="select-count">0 / 4 선택됨</span>
+    </header>
+    <p class="select-guide">마음에 드는 사진 <strong>4장</strong>을 골라주세요 (클릭하여 선택/해제)</p>
+    <div id="photo-grid" class="photo-grid"></div>
+    <div class="select-preview-wrap">
+      <h3>미리보기</h3>
+      <div id="strip-preview" class="strip-preview">
+        <div class="strip-slot empty"></div>
+        <div class="strip-slot empty"></div>
+        <div class="strip-slot empty"></div>
+        <div class="strip-slot empty"></div>
+      </div>
+    </div>
+    <button id="btn-to-decorate" class="btn-primary btn-large" disabled>꾸미기로 →</button>
+  </section>
+
+  <!-- 꾸미기 화면 -->
+  <section id="screen-decorate" class="screen">
+    <header class="decorate-header">
+      <span class="step-badge">STEP 3 · 꾸미기</span>
+    </header>
+    <div class="decorate-layout">
+      <div class="canvas-wrap">
+        <canvas id="draw-canvas"></canvas>
+      </div>
+      <aside class="tool-panel">
+        <h2>도구</h2>
+        <div class="tool-group">
+          <label>색상</label>
+          <div id="color-palette" class="color-palette"></div>
+          <input type="color" id="custom-color" value="#ff6b9d" title="커스텀 색상">
+        </div>
+        <div class="tool-group">
+          <label>브러시 크기</label>
+          <input type="range" id="brush-size" min="2" max="40" value="8">
+          <span id="brush-size-label">8px</span>
+        </div>
+        <div class="tool-group">
+          <label>도구</label>
+          <div class="tool-buttons">
+            <button class="tool-btn active" data-tool="pen" title="펜">✏️</button>
+            <button class="tool-btn" data-tool="eraser" title="지우개">🧹</button>
+          </div>
+        </div>
+        <div class="tool-actions">
+          <button id="btn-undo" class="btn-secondary">↩ 되돌리기</button>
+          <button id="btn-clear-draw" class="btn-secondary">🗑 그림 지우기</button>
+        </div>
+        <hr>
+        <button id="btn-download" class="btn-primary">💾 저장하기</button>
+        <button id="btn-restart" class="btn-secondary">🔄 처음부터</button>
+      </aside>
+    </div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>
