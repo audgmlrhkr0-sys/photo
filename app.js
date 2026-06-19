@@ -105,11 +105,11 @@ function drawDemoFrame(canvas, shotNum, isPreview) {
     ctx.fillRect(0, h - 80, w, 80);
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 36px "Noto Sans KR", sans-serif';
-    ctx.fillText('데모 카메라 미리보기', w / 2, h - 40);
+    ctx.fillText('체험 촬영', w / 2, h - 40);
 
     ctx.font = '24px "Noto Sans KR", sans-serif';
     ctx.fillStyle = 'rgba(255,255,255,0.8)';
-    ctx.fillText('촬영하기를 누르면 3초 간격으로 6장 촬영됩니다', w / 2, 48);
+    ctx.fillText('촬영하기를 눌러 시작하세요', w / 2, 48);
   }
 }
 
@@ -159,11 +159,7 @@ async function enterShoot(useDemo) {
 
   const ok = await startCamera();
   if (!ok) {
-    const tryDemo = confirm(
-      '카메라를 사용할 수 없습니다.\n\n데모 모드로 전체 흐름을 테스트할까요?'
-    );
-    if (tryDemo) startDemoMode();
-    else showScreen('entrance');
+    startDemoMode();
   }
 }
 
