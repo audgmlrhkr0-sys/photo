@@ -924,7 +924,6 @@ async function retake() {
 
 // ── Event bindings ──
 document.getElementById('btn-enter').addEventListener('click', () => enterShoot(false));
-document.getElementById('btn-demo').addEventListener('click', () => enterShoot(true));
 document.getElementById('btn-shoot').addEventListener('click', startAutoShoot);
 
 document.getElementById('btn-to-select').addEventListener('click', () => {
