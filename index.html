@@ -102,6 +102,7 @@
         <div class="tool-group">
           <label>색상</label>
           <div id="color-palette" class="color-palette"></div>
+          <p class="color-hint">아래 색상 바에서 직접 선택할 수 있어요</p>
           <input type="color" id="custom-color" value="#ff6b9d" title="커스텀 색상">
         </div>
         <div class="tool-group">
@@ -136,14 +137,16 @@
       </aside>
       <aside class="action-panel">
         <h2>완료</h2>
-        <button id="btn-download" class="btn-primary">💾 저장하기</button>
-        <div class="share-group">
-          <label for="email-input">이메일</label>
-          <input type="email" id="email-input" class="text-input" placeholder="example@email.com">
-          <button id="btn-email" class="btn-secondary">📧 메일 전송</button>
-          <p id="email-quota" class="email-quota"></p>
+        <div class="action-main">
+          <button id="btn-download" class="btn-primary">💾 저장하기</button>
+          <div class="share-group">
+            <label for="email-input">이메일</label>
+            <input type="email" id="email-input" class="text-input email-input" placeholder="example@email.com">
+            <button id="btn-email" class="btn-secondary">📧 메일 전송</button>
+            <p id="email-quota" class="email-quota"></p>
+          </div>
         </div>
-        <button id="btn-retake" class="btn-secondary">📷 재촬영</button>
+        <button id="btn-retake" class="btn-secondary btn-retake">📷 재촬영</button>
       </aside>
     </div>
   </section>
