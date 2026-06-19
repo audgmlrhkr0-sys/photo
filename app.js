@@ -87,13 +87,13 @@ function drawDemoFrame(canvas, shotNum, isPreview) {
   ctx.textBaseline = 'middle';
   ctx.fillText('🙂', w / 2, h * 0.38);
 
-  ctx.fillStyle = 'rgba(0,0,0,0.35)';
-  ctx.fillRect(0, h - 80, w, 80);
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 36px "Noto Sans KR", sans-serif';
-  ctx.fillText(isPreview ? '데모 카메라 미리보기' : `SHOT ${shotNum}`, w / 2, h - 40);
-
   if (isPreview) {
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fillRect(0, h - 80, w, 80);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 36px "Noto Sans KR", sans-serif';
+    ctx.fillText('데모 카메라 미리보기', w / 2, h - 40);
+
     ctx.font = '24px "Noto Sans KR", sans-serif';
     ctx.fillStyle = 'rgba(255,255,255,0.8)';
     ctx.fillText('촬영하기를 눌러 5초 후 촬영됩니다', w / 2, 48);
@@ -323,18 +323,37 @@ async function initDecorateScreen() {
   state.drawHistory = [drawCanvas.toDataURL()];
 }
 
-// ── Drawing ──
+// ── Drawing & stickers ──
 let isDrawing = false;
 let lastX = 0, lastY = 0;
 let currentColor = '#ff6b9d';
 let brushSize = 8;
 let currentTool = 'pen';
+let selectedSticker = '😊';
+let stickerSize = 48;
 
 const COLORS = [
   '#ff6b9d', '#ffffff', '#000000', '#ffd700',
   '#c084fc', '#60a5fa', '#34d399', '#f97316',
   '#ef4444', '#a3e635',
 ];
+
+const STICKERS = [
+  '😊', '😍', '🥳', '😘', '🤭', '😎', '🥰', '😂',
+  '❤️', '💖', '💕', '✨', '⭐', '💫', '🌸', '🎀',
+  '🦋', '🌈', '☁️', '🎉', '🎈', '👑', '✌️', '💯',
+  '🐱', '🐶', '🐰', '🍀', '🌙', '🔥', '💗', '🫶',
+];
+
+function saveDrawHistory() {
+  state.drawHistory.push(drawCanvas.toDataURL());
+}
+
+function updateDrawCursor() {
+  if (currentTool === 'eraser') drawCanvas.style.cursor = 'cell';
+  else if (currentTool === 'sticker') drawCanvas.style.cursor = 'copy';
+  else drawCanvas.style.cursor = 'crosshair';
+}
 
 function initColorPalette() {
   const palette = document.getElementById('color-palette');
@@ -356,6 +375,42 @@ function initColorPalette() {
   });
 }
 
+function initStickerPalette() {
+  const palette = document.getElementById('sticker-palette');
+  STICKERS.forEach((emoji, i) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'sticker-btn' + (i === 0 ? ' active' : '');
+    btn.textContent = emoji;
+    btn.title = emoji;
+    btn.addEventListener('click', () => {
+      selectedSticker = emoji;
+      currentTool = 'sticker';
+      document.querySelectorAll('.sticker-btn').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('.tool-btn[data-tool="sticker"]').classList.add('active');
+      document.getElementById('sticker-tools').classList.remove('hidden');
+      updateDrawCursor();
+    });
+    palette.appendChild(btn);
+  });
+
+  document.getElementById('sticker-size').addEventListener('input', e => {
+    stickerSize = parseInt(e.target.value);
+    document.getElementById('sticker-size-label').textContent = `${stickerSize}px`;
+  });
+}
+
+function placeSticker(x, y) {
+  const ctx = drawCanvas.getContext('2d');
+  ctx.font = `${stickerSize}px "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(selectedSticker, x, y);
+  saveDrawHistory();
+}
+
 function getCanvasPos(e) {
   const rect = drawCanvas.getBoundingClientRect();
   const scaleX = drawCanvas.width / rect.width;
@@ -370,8 +425,14 @@ function getCanvasPos(e) {
 
 function startDraw(e) {
   e.preventDefault();
-  isDrawing = true;
   const pos = getCanvasPos(e);
+
+  if (currentTool === 'sticker') {
+    placeSticker(pos.x, pos.y);
+    return;
+  }
+
+  isDrawing = true;
   lastX = pos.x;
   lastY = pos.y;
 }
@@ -405,7 +466,7 @@ function draw(e) {
 function endDraw() {
   if (!isDrawing) return;
   isDrawing = false;
-  state.drawHistory.push(drawCanvas.toDataURL());
+  saveDrawHistory();
 }
 
 function initDrawing() {
@@ -428,7 +489,8 @@ function initDrawing() {
       currentTool = btn.dataset.tool;
       document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      drawCanvas.style.cursor = currentTool === 'eraser' ? 'cell' : 'crosshair';
+      document.getElementById('sticker-tools').classList.toggle('hidden', currentTool !== 'sticker');
+      updateDrawCursor();
     });
   });
 
@@ -502,4 +564,5 @@ document.getElementById('btn-restart').addEventListener('click', restart);
 
 // ── Init ──
 initColorPalette();
+initStickerPalette();
 initDrawing();

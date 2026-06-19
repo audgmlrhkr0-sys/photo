@@ -111,8 +111,16 @@
           <label>도구</label>
           <div class="tool-buttons">
             <button class="tool-btn active" data-tool="pen" title="펜">✏️</button>
+            <button class="tool-btn" data-tool="sticker" title="스티커">😊</button>
             <button class="tool-btn" data-tool="eraser" title="지우개">🧹</button>
           </div>
+        </div>
+        <div id="sticker-tools" class="tool-group hidden">
+          <label>스티커 (클릭하여 붙이기)</label>
+          <div id="sticker-palette" class="sticker-palette"></div>
+          <label>스티커 크기</label>
+          <input type="range" id="sticker-size" min="24" max="96" value="48">
+          <span id="sticker-size-label">48px</span>
         </div>
         <div class="tool-actions">
           <button id="btn-undo" class="btn-secondary">↩ 되돌리기</button>
