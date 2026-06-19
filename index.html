@@ -98,7 +98,7 @@
         <canvas id="draw-canvas"></canvas>
       </div>
       <aside class="draw-panel">
-        <h2>그리기 도구</h2>
+        <h2>그리기</h2>
         <div class="tool-group">
           <label>색상</label>
           <div id="color-palette" class="color-palette"></div>
@@ -124,25 +124,26 @@
         </div>
       </aside>
       <aside class="emoji-panel">
-        <h2>이모지 스티커</h2>
-        <p class="emoji-hint">이모지 선택 → 프레임 클릭하여 붙이기<br>드래그로 이동 · 모서리 핸들로 크기 조절</p>
+        <h2>이모지</h2>
+        <p class="emoji-hint">선택 후 프레임에 클릭 · 드래그 이동 · 핸들로 크기 조절</p>
         <div id="sticker-palette" class="sticker-palette"></div>
         <div id="sticker-edit" class="sticker-edit hidden">
-          <label>선택한 스티커 크기</label>
+          <label>스티커 크기</label>
           <input type="range" id="selected-sticker-size" min="24" max="120" value="48">
           <span id="selected-sticker-size-label">48px</span>
           <button id="btn-delete-sticker" class="btn-secondary btn-small">스티커 삭제</button>
         </div>
-        <hr>
+      </aside>
+      <aside class="action-panel">
+        <h2>완료</h2>
+        <button id="btn-download" class="btn-primary">💾 저장하기</button>
         <div class="share-group">
-          <label for="email-input">이메일로 전달</label>
+          <label for="email-input">이메일</label>
           <input type="email" id="email-input" class="text-input" placeholder="example@email.com">
-          <button id="btn-email" class="btn-primary">📧 이메일로 보내기</button>
+          <button id="btn-email" class="btn-secondary">📧 메일 전송</button>
           <p id="email-quota" class="email-quota"></p>
-          <p class="email-note">이메일로 <strong>사진 다운로드 링크</strong>가 전송됩니다.<br>(무료 · 자동 과금 없음 · 한도 초과 시 전송 차단)</p>
         </div>
-        <button id="btn-download" class="btn-secondary">💾 저장하기</button>
-        <button id="btn-retake" class="btn-secondary">📷 다시 찍기</button>
+        <button id="btn-retake" class="btn-secondary">📷 재촬영</button>
       </aside>
     </div>
   </section>

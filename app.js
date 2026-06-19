@@ -869,12 +869,17 @@ async function sendEmail() {
     const photoUrl = await uploadPhotoToImgbb(jpegDataUrl);
 
     btn.textContent = '메일 전송 중...';
+    const messageBody =
+      '인생네컷 포토부스에서 만든 4컷 사진입니다!\n' +
+      '아래 링크를 눌러 다운로드하세요.\n\n' +
+      `📸 사진 다운로드:\n${photoUrl}`;
+
     await emailjs.send(cfg.serviceId, cfg.templateId, {
       to_email: email,
       email,
       name: '인생네컷',
       subject: '인생네컷 4컷 사진 📸',
-      message: '인생네컷 포토부스에서 만든 4컷 사진입니다!\n아래 링크를 눌러 다운로드하세요.',
+      message: messageBody,
       photo_url: photoUrl,
     });
 

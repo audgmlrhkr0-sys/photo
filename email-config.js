@@ -5,12 +5,8 @@
  *
  * 1. EmailJS (완료)
  * 2. https://api.imgbb.com/ → Get API Key (무료)
- * 3. EmailJS 템플릿 Content에 아래 추가:
- *
+ * 3. EmailJS 템플릿 Content:
  *    {{message}}
- *
- *    📸 사진 다운로드:
- *    {{photo_url}}
  */
 window.EMAIL_CONFIG = {
   enabled: true,

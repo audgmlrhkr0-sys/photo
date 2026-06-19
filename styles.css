@@ -580,14 +580,15 @@ body {
 .decorate-layout {
   display: flex;
   flex: 1;
-  gap: 20px;
-  padding: 20px 24px;
+  gap: 14px;
+  padding: 14px 18px;
   overflow: hidden;
   min-height: 0;
 }
 
 .canvas-wrap {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -595,11 +596,10 @@ body {
   border-radius: var(--radius);
   overflow: hidden;
   border: 1px solid var(--border);
-  min-height: 0;
 }
 
 #draw-canvas {
-  max-height: calc(100vh - 120px);
+  max-height: calc(100vh - 100px);
   max-width: 100%;
   cursor: crosshair;
   touch-action: none;
@@ -607,46 +607,55 @@ body {
 }
 
 .draw-panel,
-.emoji-panel {
+.emoji-panel,
+.action-panel {
   flex-shrink: 0;
   background: var(--bg-card);
   border-radius: var(--radius);
-  padding: 20px;
+  padding: 16px;
   border: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  overflow-y: auto;
+  gap: 10px;
+  overflow: hidden;
 }
 
 .draw-panel {
-  width: 300px;
+  width: 220px;
 }
 
 .emoji-panel {
-  width: 320px;
+  width: 248px;
+}
+
+.action-panel {
+  width: 200px;
 }
 
 .draw-panel h2,
-.emoji-panel h2 {
-  font-size: 1.05rem;
+.emoji-panel h2,
+.action-panel h2 {
+  font-size: 1rem;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 .emoji-hint {
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
-  line-height: 1.5;
+  line-height: 1.4;
+  flex-shrink: 0;
 }
 
 .sticker-edit {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px;
+  gap: 6px;
+  padding: 10px;
   background: rgba(255, 107, 157, 0.08);
   border-radius: 10px;
   border: 1px solid rgba(255, 107, 157, 0.25);
+  flex-shrink: 0;
 }
 
 .sticker-edit.hidden {
@@ -657,6 +666,14 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  flex-shrink: 0;
+}
+
+.action-panel .btn-primary,
+.action-panel .btn-secondary,
+.draw-panel .btn-secondary {
+  width: 100%;
+  flex-shrink: 0;
 }
 
 .text-input {
@@ -675,14 +692,8 @@ body {
   border-color: var(--pink);
 }
 
-.email-note {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  line-height: 1.4;
-}
-
 .email-quota {
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
   text-align: center;
 }
@@ -760,20 +771,20 @@ body {
 
 .sticker-palette {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
   flex: 1;
-  min-height: 200px;
   align-content: start;
+  overflow: hidden;
 }
 
 .sticker-btn {
   aspect-ratio: 1;
-  font-size: 1.75rem;
-  padding: 6px;
+  font-size: 1.25rem;
+  padding: 2px;
   background: rgba(255, 255, 255, 0.08);
   border: 2px solid transparent;
-  border-radius: 10px;
+  border-radius: 8px;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s, transform 0.15s;
   line-height: 1;
@@ -826,15 +837,5 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-.emoji-panel .btn-secondary,
-.emoji-panel .btn-primary,
-.draw-panel .btn-secondary {
-  width: 100%;
-}
-
-.emoji-panel hr,
-.draw-panel hr {
-  border: none;
-  border-top: 1px solid var(--border);
+  flex-shrink: 0;
 }
