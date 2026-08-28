@@ -18,7 +18,7 @@
   --border: rgba(255, 255, 255, 0.1);
   --shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
   --radius: 16px;
-  --strip-width: 280px;
+  --strip-width: 150px;
 }
 
 html, body {
@@ -287,7 +287,7 @@ body {
   border-radius: var(--radius);
   overflow: hidden;
   border: 2px solid var(--border);
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 47 / 32.5;
   max-height: calc(100vh - 120px);
   align-self: center;
 }
@@ -478,7 +478,7 @@ body {
   overflow: hidden;
   border: 3px solid transparent;
   transition: border-color 0.2s, transform 0.2s;
-  aspect-ratio: 4/3;
+  aspect-ratio: 47 / 32.5;
 }
 
 .photo-item:hover {
@@ -550,7 +550,7 @@ body {
 
 .strip-slot {
   width: 100%;
-  aspect-ratio: 4/3;
+  aspect-ratio: 47 / 32.5;
   background: #1c1c1c;
   overflow: hidden;
 }
@@ -724,8 +724,10 @@ body {
 }
 
 #draw-canvas {
+  /* 47:130 ratio — height-constrained, width follows */
   max-height: calc(100vh - 88px);
   max-width: 100%;
+  width: auto;
   cursor: crosshair;
   touch-action: none;
   box-shadow: var(--shadow);

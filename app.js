@@ -86,7 +86,7 @@ const DEMO_GRADIENTS = [
 
 function drawDemoFrame(canvas, shotNum, isPreview) {
   const w = 1280;
-  const h = 720;
+  const h = Math.round(1280 / SLOT_ASPECT); // match 47:32.5 ratio
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext('2d');
@@ -140,7 +140,12 @@ async function startCamera() {
   if (!navigator.mediaDevices?.getUserMedia) return false;
   try {
     state.stream = await navigator.mediaDevices.getUserMedia({
-      video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+      video: {
+        width: { ideal: 1280 },
+        height: { ideal: Math.round(1280 / SLOT_ASPECT) },
+        facingMode: 'user',
+        aspectRatio: { ideal: SLOT_ASPECT },
+      },
       audio: false,
     });
     camera.srcObject = state.stream;
@@ -305,141 +310,47 @@ function updateSelectUI() {
   document.getElementById('btn-to-filter').disabled = state.selected.length !== 4;
 }
 
-// ── Frame loading & detection ──
-let cachedFrameData = null;
-
-function detectFrameHoles(canvas) {
-  const w = canvas.width;
-  const h = canvas.height;
-  const ctx = canvas.getContext('2d');
-  const data = ctx.getImageData(0, 0, w, h).data;
-
-  const sampleXs = [Math.floor(w * 0.25), Math.floor(w * 0.5), Math.floor(w * 0.75)];
-  const whiteY = new Array(h).fill(false);
-  for (let y = 0; y < h; y++) {
-    let count = 0;
-    for (const x of sampleXs) {
-      const idx = (y * w + x) * 4;
-      if (data[idx] > 240 && data[idx + 1] > 240 && data[idx + 2] > 240) count++;
-    }
-    whiteY[y] = count >= 2;
-  }
-
-  const bands = [];
-  let start = -1;
-  for (let y = 0; y < h; y++) {
-    if (whiteY[y] && start === -1) start = y;
-    if (!whiteY[y] && start !== -1) {
-      if (y - start > h * 0.04) bands.push({ y1: start, y2: y - 1 });
-      start = -1;
-    }
-  }
-  if (start !== -1 && h - start > h * 0.04) bands.push({ y1: start, y2: h - 1 });
-
-  if (bands.length === 0) {
-    return Array.from({ length: 4 }, (_, i) => ({
-      x: 0, y: Math.floor(h * i / 4), w, h: Math.floor(h / 4),
-    }));
-  }
-
-  const fourBands = bands
-    .sort((a, b) => (b.y2 - b.y1) - (a.y2 - a.y1))
-    .slice(0, 4)
-    .sort((a, b) => a.y1 - b.y1);
-
-  return fourBands.map(band => {
-    const midY = Math.floor((band.y1 + band.y2) / 2);
-    let x1 = 0, x2 = w - 1;
-    for (let x = 0; x < w; x++) {
-      const idx = (midY * w + x) * 4;
-      if (data[idx] > 240 && data[idx + 1] > 240 && data[idx + 2] > 240) { x1 = x; break; }
-    }
-    for (let x = w - 1; x >= 0; x--) {
-      const idx = (midY * w + x) * 4;
-      if (data[idx] > 240 && data[idx + 1] > 240 && data[idx + 2] > 240) { x2 = x; break; }
-    }
-    return { x: x1, y: band.y1, w: x2 - x1 + 1, h: band.y2 - band.y1 + 1 };
-  });
-}
-
-async function loadFrameCanvas() {
-  if (cachedFrameData) return cachedFrameData;
-  try {
-    const img = await loadImage('F.jpg');
-    const canvas = document.createElement('canvas');
-    canvas.width = img.width;
-    canvas.height = img.height;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0);
-
-    const holes = detectFrameHoles(canvas);
-
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const d = imageData.data;
-    for (let i = 0; i < d.length; i += 4) {
-      if (d[i] > 240 && d[i + 1] > 240 && d[i + 2] > 240) d[i + 3] = 0;
-    }
-    ctx.putImageData(imageData, 0, 0);
-
-    cachedFrameData = { canvas, holes };
-    return cachedFrameData;
-  } catch (_) {
-    return null;
-  }
-}
+// ── Strip dimensions: 47mm × 130mm (10px/mm) ──
+const STRIP_W = 470;
+const STRIP_H = 1300;
+const PHOTO_H = STRIP_H / 4; // 325px  (each slot: 47mm × 32.5mm)
+const SLOT_ASPECT = STRIP_W / PHOTO_H; // ≈ 1.446 (47:32.5)
 
 // ── Decorate: build strip ──
 function loadImage(src) {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`load failed: ${src.slice(0, 60)}`));
     img.src = src;
   });
 }
 
 async function buildBaseStripCanvas() {
-  const frame = await loadFrameCanvas();
-
-  if (!frame) {
-    const stripW = 560;
-    const photoH = Math.round(stripW * (3 / 4));
-    const stripH = photoH * 4;
-    const offscreen = document.createElement('canvas');
-    offscreen.width = stripW;
-    offscreen.height = stripH;
-    const ctx = offscreen.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, stripW, stripH);
-    for (let i = 0; i < state.selected.length; i++) {
-      const img = await loadImage(state.photos[state.selected[i]]);
-      ctx.drawImage(img, 0, i * photoH, stripW, photoH);
-    }
-    return offscreen;
-  }
-
-  const { canvas: frameCvs, holes } = frame;
   const offscreen = document.createElement('canvas');
-  offscreen.width = frameCvs.width;
-  offscreen.height = frameCvs.height;
+  offscreen.width = STRIP_W;
+  offscreen.height = STRIP_H;
   const ctx = offscreen.getContext('2d');
 
-  for (let i = 0; i < Math.min(4, holes.length, state.selected.length); i++) {
-    const hole = holes[i];
-    const img = await loadImage(state.photos[state.selected[i]]);
-    const holeAspect = hole.w / hole.h;
-    const imgAspect = img.width / img.height;
-    let sx, sy, sw, sh;
-    if (imgAspect > holeAspect) {
-      sh = img.height; sw = sh * holeAspect;
-      sx = (img.width - sw) / 2; sy = 0;
-    } else {
-      sw = img.width; sh = sw / holeAspect;
-      sx = 0; sy = (img.height - sh) / 2;
-    }
-    ctx.drawImage(img, sx, sy, sw, sh, hole.x, hole.y, hole.w, hole.h);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, STRIP_W, STRIP_H);
+
+  for (let i = 0; i < state.selected.length; i++) {
+    try {
+      const img = await loadImage(state.photos[state.selected[i]]);
+      const imgAspect = img.width / img.height;
+      let sx, sy, sw, sh;
+      if (imgAspect > SLOT_ASPECT) {
+        sh = img.height; sw = sh * SLOT_ASPECT;
+        sx = (img.width - sw) / 2; sy = 0;
+      } else {
+        sw = img.width; sh = sw / SLOT_ASPECT;
+        sx = 0; sy = (img.height - sh) / 2;
+      }
+      ctx.drawImage(img, sx, sy, sw, sh, 0, i * PHOTO_H, STRIP_W, PHOTO_H);
+    } catch (_) {}
   }
 
-  ctx.drawImage(frameCvs, 0, 0);
   return offscreen;
 }
 
@@ -1106,7 +1017,6 @@ async function retake() {
   state.selected = [];
   state.filterType = 'original';
   state.isShooting = false;
-  cachedFrameData = null; // re-detect on new session (frame file might change)
   const wasDemo = state.demoMode;
   await enterShoot(wasDemo);
 }
