@@ -9,6 +9,13 @@ const state = {
   selectedStickerId: null,
   history: [],
   stickerIdCounter: 0,
+  filterType: 'original',
+};
+
+const FILTER_STYLES = {
+  original: 'none',
+  bright: 'brightness(1.5) contrast(1.1)',
+  bw: 'grayscale(1)',
 };
 
 const COUNTDOWN_SEC = 3;
@@ -19,6 +26,7 @@ const screens = {
   entrance: document.getElementById('screen-entrance'),
   shoot: document.getElementById('screen-shoot'),
   select: document.getElementById('screen-select'),
+  filter: document.getElementById('screen-filter'),
   decorate: document.getElementById('screen-decorate'),
 };
 
@@ -68,12 +76,12 @@ function playBeep() {
 
 // ── Demo mode ──
 const DEMO_GRADIENTS = [
-  ['#ff6b9d', '#c084fc'],
-  ['#60a5fa', '#34d399'],
-  ['#f97316', '#ffd700'],
-  ['#a78bfa', '#f472b6'],
-  ['#38bdf8', '#818cf8'],
-  ['#fb7185', '#fcd34d'],
+  ['#1a1a1a', '#333'],
+  ['#0d0d0d', '#222'],
+  ['#111', '#2a2a2a'],
+  ['#0a0a0a', '#1c1c1c'],
+  ['#141414', '#2c2c2c'],
+  ['#0f0f0f', '#252525'],
 ];
 
 function drawDemoFrame(canvas, shotNum, isPreview) {
@@ -294,7 +302,7 @@ function updateSelectUI() {
     }
   });
 
-  document.getElementById('btn-to-decorate').disabled = state.selected.length !== 4;
+  document.getElementById('btn-to-filter').disabled = state.selected.length !== 4;
 }
 
 // ── Decorate: build strip ──
@@ -319,11 +327,14 @@ async function buildStripCanvas() {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, stripW, stripH);
 
+  ctx.filter = FILTER_STYLES[state.filterType] || 'none';
+
   for (let i = 0; i < state.selected.length; i++) {
     const img = await loadImage(state.photos[state.selected[i]]);
     ctx.drawImage(img, 0, i * photoH, stripW, photoH);
   }
 
+  ctx.filter = 'none';
   return offscreen;
 }
 
@@ -409,7 +420,7 @@ function saveHistory() {
 let isDrawing = false;
 let lastX = 0;
 let lastY = 0;
-let currentColor = '#ff6b9d';
+let currentColor = '#39FF14';
 let brushSize = 8;
 let currentTool = 'pen';
 let selectedEmoji = '😊';
@@ -421,9 +432,9 @@ let dragStart = { x: 0, y: 0 };
 let dragOrig = { x: 0, y: 0, size: 0 };
 
 const COLORS = [
-  '#ff6b9d', '#ffffff', '#000000', '#ffd700',
-  '#c084fc', '#60a5fa', '#34d399', '#f97316',
-  '#ef4444', '#a3e635',
+  '#39FF14', '#FFE600', '#ffffff', '#000000',
+  '#ff4444', '#ff8800', '#00ccff', '#cc44ff',
+  '#ff69b4', '#aaaaaa',
 ];
 
 const STICKERS = [
@@ -503,14 +514,14 @@ function renderDecorateCanvas(showHandles = true) {
     const s = getStickerById(state.selectedStickerId);
     if (s) {
       const half = s.size / 2;
-      ctx.strokeStyle = '#ff6b9d';
+      ctx.strokeStyle = '#39FF14';
       ctx.lineWidth = 2;
       ctx.setLineDash([6, 4]);
       ctx.strokeRect(s.x - half, s.y - half, s.size, s.size);
       ctx.setLineDash([]);
 
       const h = getResizeHandlePos(s);
-      ctx.fillStyle = '#ff6b9d';
+      ctx.fillStyle = '#39FF14';
       ctx.beginPath();
       ctx.arc(h.x, h.y, 8, 0, Math.PI * 2);
       ctx.fill();
@@ -914,10 +925,35 @@ async function sendEmail() {
   }
 }
 
+// ── Filter Screen ──
+function initFilterScreen() {
+  const strip = document.getElementById('filter-strip-preview');
+  strip.innerHTML = '';
+  state.selected.forEach(idx => {
+    const img = document.createElement('img');
+    img.src = state.photos[idx];
+    img.alt = '사진';
+    strip.appendChild(img);
+  });
+
+  const thumbSrc = state.photos[state.selected[0]] || '';
+  ['original', 'bright', 'bw'].forEach(f => {
+    const thumb = document.getElementById(`filter-thumb-${f}`);
+    if (thumb) thumb.src = thumbSrc;
+  });
+
+  document.querySelectorAll('.filter-opt').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.filter === state.filterType);
+  });
+
+  strip.style.filter = FILTER_STYLES[state.filterType] || 'none';
+}
+
 // ── Retake ──
 async function retake() {
   stopCamera();
   state.selected = [];
+  state.filterType = 'original';
   state.isShooting = false;
   const wasDemo = state.demoMode;
   await enterShoot(wasDemo);
@@ -933,7 +969,22 @@ document.getElementById('btn-to-select').addEventListener('click', () => {
   showScreen('select');
 });
 
-document.getElementById('btn-to-decorate').addEventListener('click', async () => {
+document.getElementById('btn-to-filter').addEventListener('click', () => {
+  initFilterScreen();
+  showScreen('filter');
+});
+
+document.querySelectorAll('.filter-opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.filterType = btn.dataset.filter;
+    document.querySelectorAll('.filter-opt').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const strip = document.getElementById('filter-strip-preview');
+    strip.style.filter = FILTER_STYLES[state.filterType] || 'none';
+  });
+});
+
+document.getElementById('btn-filter-to-decorate').addEventListener('click', async () => {
   await initDecorateScreen();
   showScreen('decorate');
 });

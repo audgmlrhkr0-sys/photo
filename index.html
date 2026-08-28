@@ -79,7 +79,7 @@
           <div class="strip-slot empty"></div>
           <div class="strip-slot empty"></div>
         </div>
-        <button id="btn-to-decorate" class="btn-primary" disabled>꾸미기로 →</button>
+        <button id="btn-to-filter" class="btn-primary" disabled>필터 선택 →</button>
       </aside>
       <div class="select-photos-panel">
         <p class="select-guide">마음에 드는 사진 <strong>4장</strong>을 골라주세요 (클릭하여 선택/해제)</p>
@@ -88,10 +88,41 @@
     </div>
   </section>
 
+  <!-- 필터 화면 -->
+  <section id="screen-filter" class="screen">
+    <header class="filter-header">
+      <span class="step-badge">STEP 3 · 필터</span>
+    </header>
+    <div class="filter-layout">
+      <div class="filter-preview-area">
+        <div id="filter-strip-preview" class="filter-strip-preview"></div>
+      </div>
+      <aside class="filter-panel">
+        <h2>필터 선택</h2>
+        <p class="filter-hint">원하는 분위기를 골라보세요</p>
+        <div class="filter-options">
+          <button class="filter-opt active" data-filter="original">
+            <div class="filter-opt-thumb"><img id="filter-thumb-original" src="" alt="원본"></div>
+            <span>원본</span>
+          </button>
+          <button class="filter-opt" data-filter="bright">
+            <div class="filter-opt-thumb"><img id="filter-thumb-bright" src="" alt="밝게"></div>
+            <span>밝게</span>
+          </button>
+          <button class="filter-opt" data-filter="bw">
+            <div class="filter-opt-thumb"><img id="filter-thumb-bw" src="" alt="흑백"></div>
+            <span>흑백</span>
+          </button>
+        </div>
+        <button id="btn-filter-to-decorate" class="btn-primary">꾸미기로 →</button>
+      </aside>
+    </div>
+  </section>
+
   <!-- 꾸미기 화면 -->
   <section id="screen-decorate" class="screen">
     <header class="decorate-header">
-      <span class="step-badge">STEP 3 · 꾸미기</span>
+      <span class="step-badge">STEP 4 · 꾸미기</span>
     </header>
     <div class="decorate-layout">
       <div class="canvas-wrap">
@@ -103,7 +134,7 @@
           <label>색상</label>
           <div id="color-palette" class="color-palette"></div>
           <p class="color-hint">아래 색상 바에서 직접 선택할 수 있어요</p>
-          <input type="color" id="custom-color" value="#ff6b9d" title="커스텀 색상">
+          <input type="color" id="custom-color" value="#39FF14" title="커스텀 색상">
         </div>
         <div class="tool-group">
           <label>브러시 크기</label>
