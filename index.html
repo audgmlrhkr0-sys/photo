@@ -95,7 +95,7 @@
     </header>
     <div class="filter-layout">
       <div class="filter-preview-area">
-        <div id="filter-strip-preview" class="filter-strip-preview"></div>
+        <img id="filter-preview-img" class="filter-strip-img" src="" alt="미리보기">
       </div>
       <aside class="filter-panel">
         <h2>필터 선택</h2>
@@ -131,9 +131,7 @@
       <aside class="draw-panel">
         <h2>그리기</h2>
         <div class="tool-group">
-          <label>색상</label>
-          <div id="color-palette" class="color-palette"></div>
-          <p class="color-hint">아래 색상 바에서 직접 선택할 수 있어요</p>
+          <label>색상 · 아래 바에서 직접 선택</label>
           <input type="color" id="custom-color" value="#39FF14" title="커스텀 색상">
         </div>
         <div class="tool-group">
@@ -157,12 +155,9 @@
       </aside>
       <aside class="emoji-panel">
         <h2>이모지</h2>
-        <p class="emoji-hint">3열 · 선택 후 프레임에 클릭</p>
+        <p class="emoji-hint">선택 후 프레임에 클릭</p>
         <div id="sticker-palette" class="sticker-palette"></div>
         <div id="sticker-edit" class="sticker-edit hidden">
-          <label>스티커 크기</label>
-          <input type="range" id="selected-sticker-size" min="24" max="120" value="48">
-          <span id="selected-sticker-size-label">48px</span>
           <button id="btn-delete-sticker" class="btn-secondary btn-small">스티커 삭제</button>
         </div>
       </aside>

@@ -14,7 +14,7 @@ const state = {
 
 const FILTER_STYLES = {
   original: 'none',
-  bright: 'brightness(1.5) contrast(1.1)',
+  bright: 'brightness(1.2) contrast(1.05)',
   bw: 'grayscale(1)',
 };
 
@@ -305,6 +305,89 @@ function updateSelectUI() {
   document.getElementById('btn-to-filter').disabled = state.selected.length !== 4;
 }
 
+// ── Frame loading & detection ──
+let cachedFrameData = null;
+
+function detectFrameHoles(canvas) {
+  const w = canvas.width;
+  const h = canvas.height;
+  const ctx = canvas.getContext('2d');
+  const data = ctx.getImageData(0, 0, w, h).data;
+
+  const sampleXs = [Math.floor(w * 0.25), Math.floor(w * 0.5), Math.floor(w * 0.75)];
+  const whiteY = new Array(h).fill(false);
+  for (let y = 0; y < h; y++) {
+    let count = 0;
+    for (const x of sampleXs) {
+      const idx = (y * w + x) * 4;
+      if (data[idx] > 240 && data[idx + 1] > 240 && data[idx + 2] > 240) count++;
+    }
+    whiteY[y] = count >= 2;
+  }
+
+  const bands = [];
+  let start = -1;
+  for (let y = 0; y < h; y++) {
+    if (whiteY[y] && start === -1) start = y;
+    if (!whiteY[y] && start !== -1) {
+      if (y - start > h * 0.04) bands.push({ y1: start, y2: y - 1 });
+      start = -1;
+    }
+  }
+  if (start !== -1 && h - start > h * 0.04) bands.push({ y1: start, y2: h - 1 });
+
+  if (bands.length === 0) {
+    return Array.from({ length: 4 }, (_, i) => ({
+      x: 0, y: Math.floor(h * i / 4), w, h: Math.floor(h / 4),
+    }));
+  }
+
+  const fourBands = bands
+    .sort((a, b) => (b.y2 - b.y1) - (a.y2 - a.y1))
+    .slice(0, 4)
+    .sort((a, b) => a.y1 - b.y1);
+
+  return fourBands.map(band => {
+    const midY = Math.floor((band.y1 + band.y2) / 2);
+    let x1 = 0, x2 = w - 1;
+    for (let x = 0; x < w; x++) {
+      const idx = (midY * w + x) * 4;
+      if (data[idx] > 240 && data[idx + 1] > 240 && data[idx + 2] > 240) { x1 = x; break; }
+    }
+    for (let x = w - 1; x >= 0; x--) {
+      const idx = (midY * w + x) * 4;
+      if (data[idx] > 240 && data[idx + 1] > 240 && data[idx + 2] > 240) { x2 = x; break; }
+    }
+    return { x: x1, y: band.y1, w: x2 - x1 + 1, h: band.y2 - band.y1 + 1 };
+  });
+}
+
+async function loadFrameCanvas() {
+  if (cachedFrameData) return cachedFrameData;
+  try {
+    const img = await loadImage('F.jpg');
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+
+    const holes = detectFrameHoles(canvas);
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const d = imageData.data;
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i] > 240 && d[i + 1] > 240 && d[i + 2] > 240) d[i + 3] = 0;
+    }
+    ctx.putImageData(imageData, 0, 0);
+
+    cachedFrameData = { canvas, holes };
+    return cachedFrameData;
+  } catch (_) {
+    return null;
+  }
+}
+
 // ── Decorate: build strip ──
 function loadImage(src) {
   return new Promise(resolve => {
@@ -314,26 +397,62 @@ function loadImage(src) {
   });
 }
 
-async function buildStripCanvas() {
-  const stripW = 560;
-  const photoH = Math.round(stripW * (3 / 4));
-  const stripH = photoH * 4;
+async function buildBaseStripCanvas() {
+  const frame = await loadFrameCanvas();
 
-  const offscreen = document.createElement('canvas');
-  offscreen.width = stripW;
-  offscreen.height = stripH;
-  const ctx = offscreen.getContext('2d');
-
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, stripW, stripH);
-
-  ctx.filter = FILTER_STYLES[state.filterType] || 'none';
-
-  for (let i = 0; i < state.selected.length; i++) {
-    const img = await loadImage(state.photos[state.selected[i]]);
-    ctx.drawImage(img, 0, i * photoH, stripW, photoH);
+  if (!frame) {
+    const stripW = 560;
+    const photoH = Math.round(stripW * (3 / 4));
+    const stripH = photoH * 4;
+    const offscreen = document.createElement('canvas');
+    offscreen.width = stripW;
+    offscreen.height = stripH;
+    const ctx = offscreen.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, stripW, stripH);
+    for (let i = 0; i < state.selected.length; i++) {
+      const img = await loadImage(state.photos[state.selected[i]]);
+      ctx.drawImage(img, 0, i * photoH, stripW, photoH);
+    }
+    return offscreen;
   }
 
+  const { canvas: frameCvs, holes } = frame;
+  const offscreen = document.createElement('canvas');
+  offscreen.width = frameCvs.width;
+  offscreen.height = frameCvs.height;
+  const ctx = offscreen.getContext('2d');
+
+  for (let i = 0; i < Math.min(4, holes.length, state.selected.length); i++) {
+    const hole = holes[i];
+    const img = await loadImage(state.photos[state.selected[i]]);
+    const holeAspect = hole.w / hole.h;
+    const imgAspect = img.width / img.height;
+    let sx, sy, sw, sh;
+    if (imgAspect > holeAspect) {
+      sh = img.height; sw = sh * holeAspect;
+      sx = (img.width - sw) / 2; sy = 0;
+    } else {
+      sw = img.width; sh = sw / holeAspect;
+      sx = 0; sy = (img.height - sh) / 2;
+    }
+    ctx.drawImage(img, sx, sy, sw, sh, hole.x, hole.y, hole.w, hole.h);
+  }
+
+  ctx.drawImage(frameCvs, 0, 0);
+  return offscreen;
+}
+
+async function buildStripCanvas() {
+  const base = await buildBaseStripCanvas();
+  if (!state.filterType || state.filterType === 'original') return base;
+
+  const offscreen = document.createElement('canvas');
+  offscreen.width = base.width;
+  offscreen.height = base.height;
+  const ctx = offscreen.getContext('2d');
+  ctx.filter = FILTER_STYLES[state.filterType] || 'none';
+  ctx.drawImage(base, 0, 0);
   ctx.filter = 'none';
   return offscreen;
 }
@@ -461,11 +580,30 @@ function findStickerAt(x, y) {
 }
 
 function getResizeHandlePos(s) {
-  return { x: s.x + s.size / 2, y: s.y + s.size / 2 };
+  const rad = ((s.rotation || 0) * Math.PI) / 180;
+  const half = s.size / 2;
+  return {
+    x: s.x + half * (Math.cos(rad) - Math.sin(rad)),
+    y: s.y + half * (Math.sin(rad) + Math.cos(rad)),
+  };
+}
+
+function getRotateHandlePos(s) {
+  const rad = ((s.rotation || 0) * Math.PI) / 180;
+  const dist = s.size / 2 + 22;
+  return {
+    x: s.x + dist * Math.sin(rad),
+    y: s.y - dist * Math.cos(rad),
+  };
 }
 
 function isOnResizeHandle(s, x, y) {
   const h = getResizeHandlePos(s);
+  return Math.hypot(x - h.x, y - h.y) <= 14;
+}
+
+function isOnRotateHandle(s, x, y) {
+  const h = getRotateHandlePos(s);
   return Math.hypot(x - h.x, y - h.y) <= 14;
 }
 
@@ -477,6 +615,7 @@ function addSticker(x, y) {
     x,
     y,
     size: defaultStickerSize,
+    rotation: 0,
   });
   state.selectedStickerId = id;
   updateStickerEditPanel();
@@ -492,9 +631,6 @@ function updateStickerEditPanel() {
     return;
   }
   panel.classList.remove('hidden');
-  const slider = document.getElementById('selected-sticker-size');
-  slider.value = s.size;
-  document.getElementById('selected-sticker-size-label').textContent = `${s.size}px`;
 }
 
 function renderDecorateCanvas(showHandles = true) {
@@ -504,29 +640,57 @@ function renderDecorateCanvas(showHandles = true) {
   ctx.drawImage(penCanvas, 0, 0);
 
   state.stickers.forEach(s => {
+    ctx.save();
+    ctx.translate(s.x, s.y);
+    ctx.rotate(((s.rotation || 0) * Math.PI) / 180);
     ctx.font = `${s.size}px "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(s.emoji, s.x, s.y);
+    ctx.fillText(s.emoji, 0, 0);
+    ctx.restore();
   });
 
   if (showHandles && state.selectedStickerId) {
     const s = getStickerById(state.selectedStickerId);
     if (s) {
       const half = s.size / 2;
+      const rad = ((s.rotation || 0) * Math.PI) / 180;
+
+      ctx.save();
+      ctx.translate(s.x, s.y);
+      ctx.rotate(rad);
       ctx.strokeStyle = '#39FF14';
       ctx.lineWidth = 2;
       ctx.setLineDash([6, 4]);
-      ctx.strokeRect(s.x - half, s.y - half, s.size, s.size);
+      ctx.strokeRect(-half, -half, s.size, s.size);
       ctx.setLineDash([]);
+      ctx.restore();
 
-      const h = getResizeHandlePos(s);
+      const rh = getResizeHandlePos(s);
       ctx.fillStyle = '#39FF14';
       ctx.beginPath();
-      ctx.arc(h.x, h.y, 8, 0, Math.PI * 2);
+      ctx.arc(rh.x, rh.y, 8, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 2;
+      ctx.stroke();
+
+      const rot = getRotateHandlePos(s);
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(57, 255, 20, 0.4)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.moveTo(s.x, s.y);
+      ctx.lineTo(rot.x, rot.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = '#FFE600';
+      ctx.beginPath();
+      ctx.arc(rot.x, rot.y, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 1.5;
       ctx.stroke();
     }
   }
@@ -578,27 +742,13 @@ function updateDrawCursor() {
 }
 
 function initColorPalette() {
-  const palette = document.getElementById('color-palette');
-  COLORS.forEach((color, i) => {
-    const swatch = document.createElement('button');
-    swatch.type = 'button';
-    swatch.className = 'color-swatch' + (i === 0 ? ' active' : '');
-    swatch.style.background = color;
-    swatch.addEventListener('click', () => {
-      currentColor = color;
-      currentTool = 'pen';
-      document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
-      swatch.classList.add('active');
-      document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-      document.querySelector('.tool-btn[data-tool="pen"]').classList.add('active');
-      updateDrawCursor();
-    });
-    palette.appendChild(swatch);
-  });
-
+  // Palette swatches removed; handle custom color input only
   document.getElementById('custom-color').addEventListener('input', e => {
     currentColor = e.target.value;
-    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+    currentTool = 'pen';
+    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.tool-btn[data-tool="pen"]').classList.add('active');
+    updateDrawCursor();
   });
 }
 
@@ -618,18 +768,6 @@ function initStickerPalette() {
       updateDrawCursor();
     });
     palette.appendChild(btn);
-  });
-
-  document.getElementById('selected-sticker-size').addEventListener('input', e => {
-    const s = getStickerById(state.selectedStickerId);
-    if (!s) return;
-    s.size = parseInt(e.target.value, 10);
-    document.getElementById('selected-sticker-size-label').textContent = `${s.size}px`;
-    renderDecorateCanvas();
-  });
-
-  document.getElementById('selected-sticker-size').addEventListener('change', () => {
-    saveHistory();
   });
 
   document.getElementById('btn-delete-sticker').addEventListener('click', () => {
@@ -660,12 +798,19 @@ function onPointerDown(e) {
 
   if (currentTool === 'sticker') {
     const selected = getStickerById(state.selectedStickerId);
-    if (selected && isOnResizeHandle(selected, pos.x, pos.y)) {
-      dragMode = 'resize';
-      dragStickerId = selected.id;
-      dragStart = { x: pos.x, y: pos.y };
-      dragOrig = { x: selected.x, y: selected.y, size: selected.size };
-      return;
+    if (selected) {
+      if (isOnRotateHandle(selected, pos.x, pos.y)) {
+        dragMode = 'rotate';
+        dragStickerId = selected.id;
+        return;
+      }
+      if (isOnResizeHandle(selected, pos.x, pos.y)) {
+        dragMode = 'resize';
+        dragStickerId = selected.id;
+        dragStart = { x: pos.x, y: pos.y };
+        dragOrig = { x: selected.x, y: selected.y, size: selected.size };
+        return;
+      }
     }
 
     const hit = findStickerAt(pos.x, pos.y);
@@ -707,6 +852,16 @@ function onPointerMove(e) {
   e.preventDefault();
   const pos = getCanvasPos(e);
 
+  if (dragMode === 'rotate') {
+    const s = getStickerById(dragStickerId);
+    if (!s) return;
+    const dx = pos.x - s.x;
+    const dy = pos.y - s.y;
+    s.rotation = Math.atan2(dx, -dy) * 180 / Math.PI;
+    renderDecorateCanvas();
+    return;
+  }
+
   if (dragMode === 'move') {
     const s = getStickerById(dragStickerId);
     if (!s) return;
@@ -721,8 +876,6 @@ function onPointerMove(e) {
     if (!s) return;
     const delta = Math.max(pos.x - dragStart.x, pos.y - dragStart.y);
     s.size = Math.min(120, Math.max(24, dragOrig.size + delta));
-    document.getElementById('selected-sticker-size').value = s.size;
-    document.getElementById('selected-sticker-size-label').textContent = `${s.size}px`;
     renderDecorateCanvas();
     return;
   }
@@ -926,27 +1079,25 @@ async function sendEmail() {
 }
 
 // ── Filter Screen ──
-function initFilterScreen() {
-  const strip = document.getElementById('filter-strip-preview');
-  strip.innerHTML = '';
-  state.selected.forEach(idx => {
-    const img = document.createElement('img');
-    img.src = state.photos[idx];
-    img.alt = '사진';
-    strip.appendChild(img);
-  });
-
-  const thumbSrc = state.photos[state.selected[0]] || '';
-  ['original', 'bright', 'bw'].forEach(f => {
-    const thumb = document.getElementById(`filter-thumb-${f}`);
-    if (thumb) thumb.src = thumbSrc;
-  });
+async function initFilterScreen() {
+  const previewImg = document.getElementById('filter-preview-img');
+  previewImg.src = '';
+  previewImg.style.filter = 'none';
 
   document.querySelectorAll('.filter-opt').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.filter === state.filterType);
   });
 
-  strip.style.filter = FILTER_STYLES[state.filterType] || 'none';
+  const base = await buildBaseStripCanvas();
+  const baseUrl = base.toDataURL('image/jpeg', 0.9);
+
+  previewImg.src = baseUrl;
+  previewImg.style.filter = FILTER_STYLES[state.filterType] || 'none';
+
+  ['original', 'bright', 'bw'].forEach(key => {
+    const thumb = document.getElementById(`filter-thumb-${key}`);
+    if (thumb) thumb.src = baseUrl;
+  });
 }
 
 // ── Retake ──
@@ -955,6 +1106,7 @@ async function retake() {
   state.selected = [];
   state.filterType = 'original';
   state.isShooting = false;
+  cachedFrameData = null; // re-detect on new session (frame file might change)
   const wasDemo = state.demoMode;
   await enterShoot(wasDemo);
 }
@@ -970,8 +1122,8 @@ document.getElementById('btn-to-select').addEventListener('click', () => {
 });
 
 document.getElementById('btn-to-filter').addEventListener('click', () => {
-  initFilterScreen();
   showScreen('filter');
+  initFilterScreen();
 });
 
 document.querySelectorAll('.filter-opt').forEach(btn => {
@@ -979,8 +1131,8 @@ document.querySelectorAll('.filter-opt').forEach(btn => {
     state.filterType = btn.dataset.filter;
     document.querySelectorAll('.filter-opt').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    const strip = document.getElementById('filter-strip-preview');
-    strip.style.filter = FILTER_STYLES[state.filterType] || 'none';
+    const previewImg = document.getElementById('filter-preview-img');
+    previewImg.style.filter = FILTER_STYLES[state.filterType] || 'none';
   });
 });
 
