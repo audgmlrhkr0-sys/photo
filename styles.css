@@ -705,8 +705,8 @@ body {
 .decorate-layout {
   display: flex;
   flex: 1;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: 10px;
+  padding: 10px 14px;
   overflow: hidden;
   min-height: 0;
 }
@@ -724,7 +724,6 @@ body {
 }
 
 #draw-canvas {
-  /* 47:130 ratio — height-constrained, width follows */
   max-height: calc(100vh - 88px);
   max-width: 100%;
   width: auto;
@@ -733,50 +732,38 @@ body {
   box-shadow: var(--shadow);
 }
 
-/* Single scrollable sidebar replaces three fixed panels */
-.decorate-sidebar {
-  width: 210px;
+.draw-panel,
+.emoji-panel,
+.action-panel {
   flex-shrink: 0;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 12px 10px;
+  border: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   gap: 8px;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
-  scrollbar-color: rgba(57, 255, 20, 0.25) transparent;
+  scrollbar-color: rgba(57, 255, 20, 0.2) transparent;
+  min-height: 0;
 }
 
-.decorate-sidebar::-webkit-scrollbar {
-  width: 4px;
-}
-.decorate-sidebar::-webkit-scrollbar-track { background: transparent; }
-.decorate-sidebar::-webkit-scrollbar-thumb {
-  background: rgba(57, 255, 20, 0.25);
-  border-radius: 2px;
-}
-
-.draw-panel,
-.emoji-panel,
-.action-panel {
-  flex-shrink: 0;
-  width: 100%;
-  background: var(--bg-card);
-  border-radius: var(--radius);
-  padding: 14px 12px;
-  border: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+.draw-panel  { width: 185px; }
+.emoji-panel { width: 148px; }
+.action-panel { width: 180px; }
 
 .action-main {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  flex: 1;
+  min-height: 0;
 }
 
 .btn-retake {
-  margin-top: 4px;
+  margin-top: auto;
   flex-shrink: 0;
 }
 
@@ -829,12 +816,12 @@ body {
 .draw-panel .btn-secondary {
   width: 100%;
   flex-shrink: 0;
-  padding: 10px 12px;
-  font-size: 0.9rem;
+  padding: 10px 8px;
+  font-size: 0.88rem;
 }
 
 .action-panel .btn-primary {
-  padding: 11px 12px;
+  padding: 11px 8px;
 }
 
 .text-input {
@@ -940,7 +927,8 @@ body {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 4px;
-  max-height: 190px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;

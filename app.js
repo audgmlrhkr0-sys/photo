@@ -874,6 +874,7 @@ function initDrawing() {
   });
 
   document.getElementById('btn-clear-draw').addEventListener('click', async () => {
+    if (!confirm('그린 내용을 모두 지울까요?\n(그림과 스티커가 전부 초기화됩니다)')) return;
     await initDecorateScreen();
   });
 }
