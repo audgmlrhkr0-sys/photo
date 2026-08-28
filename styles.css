@@ -87,13 +87,14 @@ body {
 }
 
 .logo-title {
-  font-size: 3rem;
+  font-size: 2.2rem;
   font-weight: 900;
   background: linear-gradient(135deg, var(--green), var(--yellow));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: -1px;
+  text-align: center;
 }
 
 .logo-sub {
@@ -704,8 +705,8 @@ body {
 .decorate-layout {
   display: flex;
   flex: 1;
-  gap: 14px;
-  padding: 14px 18px;
+  gap: 12px;
+  padding: 12px 16px;
   overflow: hidden;
   min-height: 0;
 }
@@ -723,51 +724,57 @@ body {
 }
 
 #draw-canvas {
-  max-height: calc(100vh - 100px);
+  max-height: calc(100vh - 88px);
   max-width: 100%;
   cursor: crosshair;
   touch-action: none;
   box-shadow: var(--shadow);
 }
 
+/* Single scrollable sidebar replaces three fixed panels */
+.decorate-sidebar {
+  width: 210px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(57, 255, 20, 0.25) transparent;
+}
+
+.decorate-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+.decorate-sidebar::-webkit-scrollbar-track { background: transparent; }
+.decorate-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(57, 255, 20, 0.25);
+  border-radius: 2px;
+}
+
 .draw-panel,
 .emoji-panel,
 .action-panel {
   flex-shrink: 0;
+  width: 100%;
   background: var(--bg-card);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 14px 12px;
   border: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  overflow: hidden;
-}
-
-.draw-panel {
-  width: 220px;
-}
-
-.emoji-panel {
-  width: 156px;
-  min-height: 0;
-}
-
-.action-panel {
-  width: 200px;
-  min-height: 0;
+  gap: 8px;
 }
 
 .action-main {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  flex: 1;
-  min-height: 0;
+  gap: 8px;
 }
 
 .btn-retake {
-  margin-top: auto;
+  margin-top: 4px;
   flex-shrink: 0;
 }
 
@@ -781,7 +788,7 @@ body {
 .draw-panel h2,
 .emoji-panel h2,
 .action-panel h2 {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   flex-shrink: 0;
 }
@@ -797,7 +804,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 10px;
+  padding: 8px;
   background: rgba(57, 255, 20, 0.06);
   border-radius: 10px;
   border: 1px solid rgba(57, 255, 20, 0.2);
@@ -811,7 +818,7 @@ body {
 .share-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px;
   flex-shrink: 0;
 }
 
@@ -820,6 +827,12 @@ body {
 .draw-panel .btn-secondary {
   width: 100%;
   flex-shrink: 0;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+}
+
+.action-panel .btn-primary {
+  padding: 11px 12px;
 }
 
 .text-input {
@@ -924,19 +937,18 @@ body {
 .sticker-palette {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(10, minmax(0, 1fr));
   gap: 4px;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
+  max-height: 190px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(57, 255, 20, 0.2) transparent;
 }
 
 .sticker-btn {
-  min-width: 0;
-  min-height: 0;
   width: 100%;
-  height: 100%;
-  font-size: clamp(0.85rem, 1.6vh, 1.25rem);
+  aspect-ratio: 1;
+  font-size: clamp(0.9rem, 1.4vw, 1.2rem);
   padding: 0;
   background: rgba(255, 255, 255, 0.05);
   border: 2px solid transparent;
