@@ -311,13 +311,13 @@ function updateSelectUI() {
 }
 
 // ── Frame: 523 × 1570 / photo area: 470 × 1300 ──
-const FRAME_IMAGE_SRC = 'Ｆ.jpg';
+const FRAME_IMAGE_SRC = '1.png';
 const STRIP_W = 523;
 const STRIP_H = 1570;
 const PHOTO_W = 470;
 const PHOTO_AREA_H = 1300;
 const PHOTO_X = (STRIP_W - PHOTO_W) / 2;
-const PHOTO_Y = 105;
+const PHOTO_Y = 149;
 const PHOTO_H = PHOTO_AREA_H / 4;
 const SLOT_ASPECT = PHOTO_W / PHOTO_H; // ≈ 1.446 (47:32.5)
 
@@ -340,13 +340,6 @@ async function buildBaseStripCanvas(filterType = 'original') {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, STRIP_W, STRIP_H);
 
-  try {
-    const frame = await loadImage(FRAME_IMAGE_SRC);
-    ctx.drawImage(frame, 0, 0, STRIP_W, STRIP_H);
-  } catch (_) {
-    console.warn(`${FRAME_IMAGE_SRC} 프레임 이미지를 불러오지 못했습니다.`);
-  }
-
   for (let i = 0; i < state.selected.length; i++) {
     try {
       const img = await loadImage(state.photos[state.selected[i]]);
@@ -367,6 +360,13 @@ async function buildBaseStripCanvas(filterType = 'original') {
       );
       ctx.filter = 'none';
     } catch (_) {}
+  }
+
+  try {
+    const frame = await loadImage(FRAME_IMAGE_SRC);
+    ctx.drawImage(frame, 0, 0, STRIP_W, STRIP_H);
+  } catch (_) {
+    console.warn(`${FRAME_IMAGE_SRC} 프레임 이미지를 불러오지 못했습니다.`);
   }
 
   return offscreen;
