@@ -311,7 +311,7 @@ function updateSelectUI() {
 }
 
 // ── Frame: 523 × 1570 / photo area: 470 × 1300 ──
-const FRAME_IMAGE_SRC = '1.png';
+const FRAME_IMAGE_SRC = '1.png?v=20261007-1207';
 const STRIP_W = 523;
 const STRIP_H = 1570;
 const PHOTO_W = 470;

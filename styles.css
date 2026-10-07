@@ -554,7 +554,7 @@ body {
   inset: 0;
   z-index: 2;
   pointer-events: none;
-  background: url('1.png') center / 100% 100% no-repeat;
+  background: url('1.png?v=20261007-1207') center / 100% 100% no-repeat;
 }
 
 .strip-photo-area {
