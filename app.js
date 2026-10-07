@@ -310,11 +310,16 @@ function updateSelectUI() {
   document.getElementById('btn-to-filter').disabled = state.selected.length !== 4;
 }
 
-// ── Strip dimensions: 47mm × 130mm (10px/mm) ──
-const STRIP_W = 470;
-const STRIP_H = 1300;
-const PHOTO_H = STRIP_H / 4; // 325px  (each slot: 47mm × 32.5mm)
-const SLOT_ASPECT = STRIP_W / PHOTO_H; // ≈ 1.446 (47:32.5)
+// ── Frame: 523 × 1570 / photo area: 470 × 1300 ──
+const FRAME_IMAGE_SRC = 'Ｆ.jpg';
+const STRIP_W = 523;
+const STRIP_H = 1570;
+const PHOTO_W = 470;
+const PHOTO_AREA_H = 1300;
+const PHOTO_X = (STRIP_W - PHOTO_W) / 2;
+const PHOTO_Y = 105;
+const PHOTO_H = PHOTO_AREA_H / 4;
+const SLOT_ASPECT = PHOTO_W / PHOTO_H; // ≈ 1.446 (47:32.5)
 
 // ── Decorate: build strip ──
 function loadImage(src) {
@@ -326,7 +331,7 @@ function loadImage(src) {
   });
 }
 
-async function buildBaseStripCanvas() {
+async function buildBaseStripCanvas(filterType = 'original') {
   const offscreen = document.createElement('canvas');
   offscreen.width = STRIP_W;
   offscreen.height = STRIP_H;
@@ -334,6 +339,13 @@ async function buildBaseStripCanvas() {
 
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, STRIP_W, STRIP_H);
+
+  try {
+    const frame = await loadImage(FRAME_IMAGE_SRC);
+    ctx.drawImage(frame, 0, 0, STRIP_W, STRIP_H);
+  } catch (_) {
+    console.warn(`${FRAME_IMAGE_SRC} 프레임 이미지를 불러오지 못했습니다.`);
+  }
 
   for (let i = 0; i < state.selected.length; i++) {
     try {
@@ -347,7 +359,13 @@ async function buildBaseStripCanvas() {
         sw = img.width; sh = sw / SLOT_ASPECT;
         sx = 0; sy = (img.height - sh) / 2;
       }
-      ctx.drawImage(img, sx, sy, sw, sh, 0, i * PHOTO_H, STRIP_W, PHOTO_H);
+      ctx.filter = FILTER_STYLES[filterType] || 'none';
+      ctx.drawImage(
+        img,
+        sx, sy, sw, sh,
+        PHOTO_X, PHOTO_Y + i * PHOTO_H, PHOTO_W, PHOTO_H
+      );
+      ctx.filter = 'none';
     } catch (_) {}
   }
 
@@ -355,17 +373,7 @@ async function buildBaseStripCanvas() {
 }
 
 async function buildStripCanvas() {
-  const base = await buildBaseStripCanvas();
-  if (!state.filterType || state.filterType === 'original') return base;
-
-  const offscreen = document.createElement('canvas');
-  offscreen.width = base.width;
-  offscreen.height = base.height;
-  const ctx = offscreen.getContext('2d');
-  ctx.filter = FILTER_STYLES[state.filterType] || 'none';
-  ctx.drawImage(base, 0, 0);
-  ctx.filter = 'none';
-  return offscreen;
+  return buildBaseStripCanvas(state.filterType);
 }
 
 async function initDecorateScreen() {
@@ -1000,15 +1008,16 @@ async function initFilterScreen() {
     btn.classList.toggle('active', btn.dataset.filter === state.filterType);
   });
 
-  const base = await buildBaseStripCanvas();
+  const base = await buildBaseStripCanvas(state.filterType);
   const baseUrl = base.toDataURL('image/jpeg', 0.9);
 
   previewImg.src = baseUrl;
-  previewImg.style.filter = FILTER_STYLES[state.filterType] || 'none';
 
   ['original', 'bright', 'bw'].forEach(key => {
-    const thumb = document.getElementById(`filter-thumb-${key}`);
-    if (thumb) thumb.src = baseUrl;
+    buildBaseStripCanvas(key).then(canvas => {
+      const thumb = document.getElementById(`filter-thumb-${key}`);
+      if (thumb) thumb.src = canvas.toDataURL('image/jpeg', 0.85);
+    });
   });
 }
 
@@ -1038,12 +1047,13 @@ document.getElementById('btn-to-filter').addEventListener('click', () => {
 });
 
 document.querySelectorAll('.filter-opt').forEach(btn => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     state.filterType = btn.dataset.filter;
     document.querySelectorAll('.filter-opt').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     const previewImg = document.getElementById('filter-preview-img');
-    previewImg.style.filter = FILTER_STYLES[state.filterType] || 'none';
+    const preview = await buildBaseStripCanvas(state.filterType);
+    previewImg.src = preview.toDataURL('image/jpeg', 0.9);
   });
 });
 

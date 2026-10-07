@@ -18,7 +18,7 @@
   --border: rgba(255, 255, 255, 0.1);
   --shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
   --radius: 16px;
-  --strip-width: 150px;
+  --strip-width: 190px;
 }
 
 html, body {
@@ -526,7 +526,7 @@ body {
 }
 
 .select-frame-panel .strip-preview {
-  width: 100%;
+  width: min(100%, var(--strip-width));
 }
 
 .select-frame-panel #btn-to-filter {
@@ -540,10 +540,20 @@ body {
 
 .strip-preview {
   width: var(--strip-width);
-  background: white;
+  aspect-ratio: 523 / 1570;
+  position: relative;
+  background: white url('Ｆ.jpg') center / 100% 100% no-repeat;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: var(--shadow);
+}
+
+.strip-photo-area {
+  position: absolute;
+  left: 5.067%;
+  top: 6.688%;
+  width: 89.866%;
+  height: 82.803%;
   display: flex;
   flex-direction: column;
 }
