@@ -317,7 +317,7 @@ const STRIP_H = 1570;
 const PHOTO_W = 470;
 const PHOTO_AREA_H = 1300;
 const PHOTO_X = (STRIP_W - PHOTO_W) / 2;
-const PHOTO_Y = 149;
+const PHOTO_Y = 135;
 const PHOTO_H = PHOTO_AREA_H / 4;
 const SLOT_ASPECT = PHOTO_W / PHOTO_H; // ≈ 1.446 (47:32.5)
 
